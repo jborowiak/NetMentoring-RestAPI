@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using CatalogServiceAPI.Infrastructure;
 using CatalogServiceAPI.Models;
 
@@ -28,7 +29,7 @@ namespace CatalogServiceAPI.Controllers
         }
 
         [HttpPost]
-        public IActionResult AddCategory(CategoryAdd category)
+        public async Task<IActionResult> AddCategory(CategoryAdd category)
         {
             var existingCategories = _dbContext.Categories.Select(x => new CategoryGet(x.Id, x.Name, x.Description));
             if (existingCategories.Any(x => x.Name == category.Name))
@@ -41,21 +42,43 @@ namespace CatalogServiceAPI.Controllers
                 Name = category.Name,
                 Description = category.Description
             });
-            _dbContext.SaveAsync();
+            await _dbContext.SaveAsync();
+
             return Ok();
 
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateCategory([FromRoute] int id, [FromBody] CategoryUpdate categoryUpdateDto)
+        public async Task<IActionResult> UpdateCategory([FromRoute] int id, [FromBody] CategoryUpdate categoryUpdateDto)
         {
-            //var categoryUpdate = new CategoryUpdate(id, categoryUpdateDto.Name, categoryUpdateDto.Description);
+            var category = _dbContext.Categories.FirstOrDefault(x => x.Id == id);
+
+            if (category == null)
+            {
+                return NotFound("Category does not exist");
+            }
+
+            category.Name = categoryUpdateDto.Name;
+            category.Description = categoryUpdateDto.Description;
+
+            await _dbContext.SaveAsync();
+
             return Ok();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteCategory([FromRoute] int id)
+        public async Task<IActionResult> DeleteCategory([FromRoute] int id)
         {
+            var category = _dbContext.Categories.FirstOrDefault(x => x.Id == id);
+
+            if (category == null)
+            {
+                return NotFound("Category does not exist");
+            }
+
+            _dbContext.Categories.Remove(category);
+            await _dbContext.SaveAsync();
+
             return Ok();
         }
     }
