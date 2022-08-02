@@ -25,9 +25,9 @@ namespace CatalogServiceAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateItem([FromRoute] int id, [FromBody] ItemUpdateDto itemUpdateDto)
+        public IActionResult UpdateItem([FromRoute] int id, [FromBody] ItemUpdate itemUpdateDto)
         {
-            var itemUpdate = new ItemUpdate(id, itemUpdateDto.Name, itemUpdateDto.CategoryId);
+            //var itemUpdate = new ItemUpdate(id, itemUpdateDto.Name, itemUpdateDto.CategoryId);
             return Ok();
         }
 
