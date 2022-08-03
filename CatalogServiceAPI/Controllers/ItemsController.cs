@@ -1,4 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using CatalogServiceAPI.Infrastructure;
 using CatalogServiceAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,32 +11,71 @@ namespace CatalogServiceAPI.Controllers
     [Route("[controller]")]
     public class ItemsController : Controller
     {
+        private readonly ICatalogDbContext _dbContext;
+
+        public ItemsController(ICatalogDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
         [HttpGet]
         public ActionResult<IEnumerable<ItemGet>> GetItems()
         {
-            return Ok(new List<ItemGet>()
-            {
-                new ItemGet(1, "test1", new CategoryGet(1, "test", "test")),
-                new ItemGet(2, "test2", new CategoryGet(1, "test", "test"))
-            });
+            var items = _dbContext.Items.Select(x => new ItemGet(x.Id, x.Name, new CategoryGet(x.CategoryId, x.Category.Name, x.Category.Description)));
+
+            return Ok(items);
         }
 
         [HttpPost]
-        public IActionResult AddItem([FromBody] ItemAdd item)
+        public async Task<IActionResult> AddItem([FromBody] ItemAdd item)
         {
+            var existingItems = _dbContext.Items.Select(x => new ItemGet(x.Id, x.Name, new CategoryGet(x.CategoryId, x.Category.Name, x.Category.Description)));
+            if (existingItems.Any(x => x.Name == item.Name))
+            {
+                return BadRequest("Item with this name already exists");
+            }
+
+            _dbContext.Items.Add(new Item()
+            {
+                Name = item.Name,
+                CategoryId = item.CategoryId
+            });
+            await _dbContext.SaveAsync();
+
             return Ok();
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateItem([FromRoute] int id, [FromBody] ItemUpdate itemUpdateDto)
+        public async Task<IActionResult> UpdateItem([FromRoute] int id, [FromBody] ItemUpdate itemUpdateDto)
         {
-            //var itemUpdate = new ItemUpdate(id, itemUpdateDto.Name, itemUpdateDto.CategoryId);
+            var item = _dbContext.Items.FirstOrDefault(x => x.Id == id);
+
+            if (item == null)
+            {
+                return NotFound("Category does not exist");
+            }
+
+            item.Name = itemUpdateDto.Name;
+            item.CategoryId = itemUpdateDto.CategoryId;
+
+            await _dbContext.SaveAsync();
+
             return Ok();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteItem([FromRoute] int id)
+        public async Task<IActionResult> DeleteItem([FromRoute] int id)
         {
+            var item = _dbContext.Items.FirstOrDefault(x => x.Id == id);
+
+            if (item == null)
+            {
+                return NotFound("Item does not exist");
+            }
+
+            _dbContext.Items.Remove(item);
+            await _dbContext.SaveAsync();
+
             return Ok();
         }
     }
