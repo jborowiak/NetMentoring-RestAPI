@@ -52,7 +52,7 @@ namespace CatalogServiceAPI.Controllers
 
             if (item == null)
             {
-                return NotFound("Category does not exist");
+                return NotFound("Item does not exist");
             }
 
             item.Name = itemUpdateDto.Name;
