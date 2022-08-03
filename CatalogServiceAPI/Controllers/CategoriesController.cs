@@ -76,6 +76,10 @@ namespace CatalogServiceAPI.Controllers
                 return NotFound("Category does not exist");
             }
 
+            var categoryItems = _dbContext.Items.Where(x => x.CategoryId == id);
+
+            _dbContext.Items.RemoveRange(categoryItems);
+
             _dbContext.Categories.Remove(category);
             await _dbContext.SaveAsync();
 
