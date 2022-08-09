@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CatalogServiceAPI.ApiModels;
 using CatalogServiceAPI.Infrastructure;
 using CatalogServiceAPI.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -19,11 +20,18 @@ namespace CatalogServiceAPI.Controllers
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<ItemGet>> GetItems()
+        public ActionResult<IEnumerable<ItemGetResult>> GetItems([FromQuery] int? categoryId = null, [FromQuery] int page = 1, [FromQuery] int itemsOnPage = 5)
         {
-            var items = _dbContext.Items.Select(x => new ItemGet(x.Id, x.Name, new CategoryGet(x.CategoryId, x.Category.Name, x.Category.Description)));
+            var items = _dbContext
+                .Items
+                .Where(x => categoryId == null || x.CategoryId == categoryId)
+                .Skip((page - 1) * itemsOnPage)
+                .Take(itemsOnPage)
+                .Select(x => new ItemGet(x.Id, x.Name, new CategoryGet(x.CategoryId, x.Category.Name, x.Category.Description)));
 
-            return Ok(items);
+            var result = new ItemGetResult(page, itemsOnPage, items.ToList());
+
+            return Ok(result);
         }
 
         [HttpPost]
